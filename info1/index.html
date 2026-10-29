@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Download Folder</title>
+<style>
+body{font-family:Calibri,Arial,sans-serif;margin:30px;color:#222}h1{font-size:24px;font-weight:400}#files{font-size:18px;line-height:1.8}a{text-decoration:none;color:#0969da;overflow-wrap:anywhere}a:hover{text-decoration:underline}.error{color:#b42318}
+</style>
+</head>
+<body>
+<h1 id="title">Download Folder</h1>
+<div id="files">Загрузка списка файлов…</div>
+<script>
+(async function () {
+  const owner = 'sornick02';
+  const repo = 'letber';
+  const branch = 'main';
+  const folder = 'info1';
+  const container = document.getElementById('files');
+  document.getElementById('title').textContent = folder + ' — Download Folder';
+  try {
+    const api = `https://api.github.com/repos/${owner}/${repo}/contents/${folder}?ref=${encodeURIComponent(branch)}`;
+    const response = await fetch(api, {headers: {'Accept':'application/vnd.github+json'}});
+    if (!response.ok) throw new Error(`GitHub API: HTTP ${response.status}`);
+    const entries = await response.json();
+    if (!Array.isArray(entries)) throw new Error('Неверный ответ GitHub API');
+    container.replaceChildren();
+    const sorted = entries.filter(e => e.type === 'file' || e.type === 'dir').sort((a,b) => (a.type === b.type ? a.name.localeCompare(b.name, 'ru') : a.type === 'dir' ? -1 : 1));
+    for (const entry of sorted) {
+      if (entry.name === 'index.html' || entry.name === 'index.php') continue;
+      const line = document.createElement('div');
+      const link = document.createElement('a');
+      link.textContent = (entry.type === 'dir' ? '📁 ' : '📄 ') + entry.name;
+      link.href = entry.type === 'dir'
+        ? `https://${owner}.github.io/${repo}/${entry.path.split('/').map(encodeURIComponent).join('/')}/`
+        : `https://${owner}.github.io/${repo}/${entry.path.split('/').map(encodeURIComponent).join('/')}`;
+      line.append(link);
+      container.append(line);
+    }
+    if (!container.children.length) container.textContent = 'Нет файлов для отображения.';
+  } catch (error) {
+    container.className = 'error';
+    container.textContent = 'Не удалось получить список файлов: ' + error.message;
+  }
+})();
+</script>
+</body>
+</html>
